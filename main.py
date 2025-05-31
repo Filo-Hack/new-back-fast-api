@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.v1 import routes_upload, routes_gpt
+from api import routes_upload, routes_gpt
 
 app = FastAPI(
     title="LLM Connector",
