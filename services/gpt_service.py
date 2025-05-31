@@ -7,12 +7,12 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
-    device_map="cuda" if device == "cuda" else "auto",
+    device_map="cuda",
     torch_dtype=torch.float16 if device == "cuda" else torch.float32
 ).to(device)
 model.eval()
 
-async def query_gpt(chat_history: list[dict], max_new_tokens: int = 1024) -> str:
+async def query_gpt(chat_history: list[dict]) -> str:
     input_ids = tokenizer.apply_chat_template(
         chat_history,
         tokenize=True,
@@ -22,7 +22,7 @@ async def query_gpt(chat_history: list[dict], max_new_tokens: int = 1024) -> str
     with torch.no_grad():
         output = model.generate(
             input_ids,
-            max_new_tokens=max_new_tokens,
+            max_new_tokens=1024,
             pad_token_id=tokenizer.eos_token_id,
             do_sample=True,
             top_k=50,
