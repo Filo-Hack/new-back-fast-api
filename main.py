@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from api import routes_upload, routes_sensor
+from app.api.v1 import routes_upload, routes_gpt
 
 app = FastAPI(
     title="LLM Connector",
@@ -7,5 +7,5 @@ app = FastAPI(
     version="0.1.0"
 )
 
-app.include_router(routes_upload.router, prefix="/upload_speech", tags=["Upload"])
-app.include_router(routes_sensor.router, prefix="/data", tags=["SensorData"])
+app.include_router(routes_upload.router, prefix="/upload", tags=["Upload"])
+app.include_router(routes_gpt.router, prefix="/gpt", tags=["LLM"])
