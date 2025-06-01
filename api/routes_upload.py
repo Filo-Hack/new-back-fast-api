@@ -1,38 +1,42 @@
-from fastapi import APIRouter, File, Form, UploadFile, HTTPException
-from services.file_saver import save_temp_audio
+from fastapi import APIRouter, Form
 from services.gpt_service import query_gpt
 from models.response.upload import UploadResponse
-import os
+from datetime import datetime
+from uuid import uuid4
+from TTS.ChatEngine import ChatEngine
+from TTS.dbManager import ChromaDBManager
 
 router = APIRouter()
-chat_history = []
 
-ALLOWED_EXTENSIONS = {".mp3", ".wav", ".m4a"}
+# Новый способ инициализации ChatEngine
+chroma_db = ChromaDBManager()
+chat_engine = ChatEngine(chroma_db)
 
 @router.post("/upload_speech", response_model=UploadResponse)
 async def upload_text_audio(
-    text: str = Form(...),
-    audio: UploadFile = File(...)
+    text: str = Form(...)
 ):
-    print(text)
-    # Проверка расширения файла
-    ext = os.path.splitext(audio.filename)[-1].lower()
-    if ext not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Неподдерживаемый формат файла: {ext}. Допустимые форматы: {', '.join(ALLOWED_EXTENSIONS)}"
-        )
+    message_id = f"msg_{uuid4().hex[:8]}"
+    timestamp = datetime.now().isoformat()
+    status = "device"
 
-    path = await save_temp_audio(audio)
+    record = [{
+        "text": text,
+        "timestamp": timestamp,
+        "status": status
+    }]
 
-    # Формируем чат для запроса к LLM
-    chat_history.append({"role": "user", "content": text})
-    llm_response = await query_gpt(chat_history)
-    chat_history.append({"role": "assistant", "content": llm_response})
-    
+    # Сохраняем в БД
+    chat_engine.save_record(record)
+
+    # Генерируем промт из базы знаний
+    prompt = chat_engine.generate_response(text)
+
+    # Отправляем в LLM
+    gpt_response = await query_gpt([{"role": "user", "content": prompt}])
+
     return UploadResponse(
         message="Файл получен",
         text=text,
-        audio_path=path,
-        gpt_response=llm_response
+        gpt_response=gpt_response
     )
