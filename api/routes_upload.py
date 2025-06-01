@@ -14,6 +14,7 @@ async def upload_text_audio(
     text: str = Form(...),
     audio: UploadFile = File(...)
 ):
+    print(text)
     # Проверка расширения файла
     ext = os.path.splitext(audio.filename)[-1].lower()
     if ext not in ALLOWED_EXTENSIONS:
